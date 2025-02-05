@@ -2,7 +2,47 @@ import numpy as np
 import matplotlib.pyplot as plt
 import torchvision.transforms as transforms
 from tqdm import tqdm
+import torch
+from torch.utils.data import DataLoader, Subset
 
+
+# Datasets
+def get_subset(trainset,
+               testset, 
+               percentage) : 
+    # Select only 1% of the dataset
+    num_train_samples = int(percentage*len(trainset))
+    num_test_samples = int(percentage*len(testset))    
+
+    # Randomly select indices
+    train_indices = np.random.choice(len(trainset), num_train_samples, replace=False)
+    test_indices = np.random.choice(len(testset), num_test_samples, replace=False)
+
+    # Create subset datasets
+    train_subset = Subset(trainset, train_indices)
+    test_subset = Subset(testset, test_indices)
+
+    # Verify dataset size
+    print(f"Training samples: {len(train_subset)}")
+    print(f"Test samples: {len(test_subset)}")
+    return train_subset, test_subset
+
+# Plots
+def plot_images(dataset, 
+                n_images
+                ) : 
+    """
+    This function plots n_images images selected randomly within the dataset.
+    """
+    size = n_images
+    image_idx = np.random.randint(low=0, high=len(dataset), size=size)
+    fig, ax = plt.subplots(nrows=1, ncols=size, figsize=(10, 3))
+    for i in range(size) : 
+        idx = image_idx[i]
+        raw_image = dataset[idx][0] 
+        ax[i].imshow(np.transpose(raw_image, (1,2,0)))
+        ax[i].axis("off")        
+    plt.show()
 
 def plot_before_after_augmentation(dataset, 
                                    transformation : transforms
@@ -62,3 +102,24 @@ def train_WideResNet(
         print(f"Epoch {epoch+1}: Loss={running_loss/len(trainloader):.4f}, Accuracy={100 * correct / total:.2f}%")
 
     print("Training complete!")
+    return model
+
+
+def evaluate(model, test_loader, device):
+    model.eval()  # Mode évaluation (désactive dropout, batchnorm)
+    correct = 0
+    total = 0
+
+    with torch.no_grad():  # Pas de calcul de gradient
+        for images, labels in test_loader:
+            images, labels = images.to(device), labels.to(device)
+            outputs = model(images)
+            _, predicted = torch.max(outputs, 1)
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item()
+
+    accuracy = correct / total
+    error_rate = 1 - accuracy
+    print(f"Accuracy: {accuracy * 100:.2f}%")
+    print(f"Taux d'erreur: {error_rate * 100:.2f}%")
+    return accuracy, error_rate
