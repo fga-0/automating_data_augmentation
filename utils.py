@@ -82,6 +82,8 @@ def train_WideResNet(
         correct, total = 0, 0
 
         pbar = tqdm(trainloader, desc=f"Epoch {epoch+1}/{num_epochs}", leave=False)
+        losses = []
+        accuracies = []
         for inputs, labels in pbar:
             inputs, labels = inputs.to(device), labels.to(device)
 
@@ -97,11 +99,19 @@ def train_WideResNet(
             total += labels.size(0)
 
             pbar.set_postfix(loss=f"{running_loss / (total / batch_size):.4f}", acc=f"{100 * correct / total:.2f}%")
-
+            losses.append(loss)
         scheduler.step()
-        print(f"Epoch {epoch+1}: Loss={running_loss/len(trainloader):.4f}, Accuracy={100 * correct / total:.2f}%")
+        accuracy = 100 * correct / total
+        accuracies.append(accuracy)
+        print(f"Epoch {epoch+1}: Loss={running_loss/len(trainloader):.4f}, Accuracy={accuracy:.2f}%")
 
     print("Training complete!")
+    fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(10, 5))
+    axes[0].plot(range(num_epochs), losses)
+    axes[0].title.set_text("Training loss")
+    axes[1].plot(range(num_epochs), accuracies)
+    axes[1].title.set_text("Training accuracy")
+    plt.show()
     return model
 
 
