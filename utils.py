@@ -3,10 +3,44 @@ import matplotlib.pyplot as plt
 import torchvision.transforms as transforms
 from tqdm import tqdm
 import torch
-from torch.utils.data import DataLoader, Subset
+from torch.utils.data import DataLoader, Subset, random_split
 
+
+class EarlyStopping() : 
+    def __init(self, patience, min_delta) :
+        self.patience = patience
+        self.min_delta = min_delta 
+        self.best_loss = float('inf')
+        # self.early_stop = False
+        self.counter = 0
+        # self.best_model_state = None
+    def __call__(self, val_loss) : 
+        if self.best_loss - val_loss > self.min_delta : 
+            self.best_loss = val_loss
+            self.counter = 0
+        else : 
+            self.counter += 1
+        return self.counter >= self.patience
+            
+        
 
 # Datasets
+
+def get_trainloader_valloader(
+    dataset, # the dataset to split in trainin ang validation sets
+    split : float, # specifies the splitting between training and validation sets
+    batch_size : int,
+    ) : 
+    
+    train_size = int(split * len(dataset))
+    val_size = len(dataset) - train_size
+    trainset, valset = random_split(dataset, [train_size, val_size])
+    train_loader = DataLoader(trainset, batch_size=batch_size, shuffle=True)
+    val_loader = DataLoader(valset, batch_size=batch_size, shuffle=True)    
+    print(f"Training set length : {len(trainset)}.")
+    print(f"Validation set length : {len(valset)}.")
+    return train_loader, val_loader
+    
 def get_subset(trainset,
                testset, 
                percentage) : 
@@ -71,18 +105,25 @@ def train_WideResNet(
     batch_size,
     model, 
     trainloader, 
+    valloader,
     optimizer, 
     criterion,
     device, 
     scheduler, 
+    patience, 
+    min_delta
     ) : 
     
-    losses_per_epoch = []
-    accuracies = []
+    training_losses = []
+    train_accuracies = []
+    val_accuracies = []
+    val_losses = []
+    early_stopping = EarlyStopping(patience=patience, min_delta=min_delta)
+    
     for epoch in range(num_epochs):
         model.train()
         running_loss = 0.0
-        correct, total = 0, 0
+        correct_train, total_train = 0, 0
 
         pbar = tqdm(trainloader, desc=f"Epoch {epoch+1}/{num_epochs}", leave=False)
         for inputs, labels in pbar:
@@ -96,26 +137,55 @@ def train_WideResNet(
 
             running_loss += loss.item()
             _, predicted = outputs.max(1)
-            correct += predicted.eq(labels).sum().item()
-            total += labels.size(0)
+            correct_train += predicted.eq(labels).sum().item()
+            total_train += labels.size(0)
 
-            pbar.set_postfix(loss=f"{running_loss / (total / batch_size):.4f}", acc=f"{100 * correct / total:.2f}%")
+            pbar.set_postfix(loss=f"{running_loss / (total_train / batch_size):.4f}", acc=f"{100 * correct_train / total_train:.2f}%")
         
         avg_loss = running_loss / len(trainloader)
-        losses_per_epoch.append(avg_loss)
-        accuracy = 100 * correct / total
-        accuracies.append(accuracy)
+        training_losses.append(avg_loss)
+        accuracy = 100 * correct_train / total_train
+        train_accuracies.append(accuracy)
         
+        # Validation step 
+        model.eval()
+        val_loss = 0.0
+        correct_val, total_val = 0, 0
+        with torch.no_grad() : 
+            for inputs, labels in valloader : 
+                inputs, labels = inputs.to(device), labels.to(device)
+                outputs = model(inputs)
+                loss = criterion(outputs, labels)
+                val_loss += loss.item()
+                
+                # Calcul de l'accuracy sur la validation
+                _, predicted = outputs.max(1)
+                correct_val += predicted.eq(labels).sum().item()
+                total_val += labels.size(0)
+                
+        val_loss /= len(valloader)
+        val_losses.append(val_loss)
+        val_accuracy = 100 * correct_val / total_val  # Calcul de l'accuracy
+        val_accuracies.append(val_accuracy)  # Stockage pour analyse
+        print(f"Epoch {epoch+1}: Loss={avg_loss:.4f}, Accuracy={accuracy:.2f}%, Val Loss={val_loss:.4f}, Val Accuracy={val_accuracy:.2f}%")
         scheduler.step()
+        
+        if early_stopping(val_loss) :                 
+            print(f"Early stopping triggered at epoch {epoch+1}")
+            break
         
         print(f"Epoch {epoch+1}: Loss={running_loss/len(trainloader):.4f}, Accuracy={accuracy:.2f}%")
 
     print("Training complete!")
     fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(10, 5))
-    axes[0].plot(range(num_epochs), torch.tensor(losses_per_epoch).cpu())
-    axes[0].title.set_text("Training loss")
-    axes[1].plot(range(num_epochs), torch.tensor(accuracies).cpu())
-    axes[1].title.set_text("Training accuracy")
+    axes[0].plot(range(num_epochs), torch.tensor(training_losses).cpu(), label="Training loss")
+    axes[0].plot(range(num_epochs), torch.tensor(val_losses).cpu(), label="Validation loss")
+    axes[0].title.set_text("Losses")
+    axes[0].set_xlabel(xlabel="Epochs")
+    axes[1].plot(range(num_epochs), torch.tensor(train_accuracies).cpu(), label="Training accuracies")
+    axes[1].plot(range(num_epochs), torch.tensor(val_accuracies).cpu(), label="Validation accuracies")
+    axes[1].title.set_text("Accuracies")
+    axes[0].set_xlabel(xlabel="Epochs")
     plt.tight_layout()
     plt.show()
     return model
