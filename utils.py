@@ -7,19 +7,27 @@ from torch.utils.data import DataLoader, Subset, random_split
 
 
 class EarlyStopping: 
-    def __init__(self, patience, min_delta) :
+    def __init__(self, patience, min_delta_loss, min_delta_accuracy) :
         self.patience = patience
-        self.min_delta = min_delta 
+        self.min_delta_loss = min_delta_loss
+        self.min_delta_accuracy = min_delta_accuracy
         self.best_loss = float('inf')
         # self.early_stop = False
         self.counter = 0
         # self.best_model_state = None
-    def __call__(self, val_loss) : 
-        if self.best_loss - val_loss > self.min_delta : 
+        self.best_accuracy = float('inf')
+    def __call__(self, val_loss, val_accuracy) : 
+        if self.best_loss - val_loss < self.min_delta_loss or abs(self.best_accuracy - val_accuracy) < self.min_delta_accuracy: 
+            self.counter += 1
+        else : 
             self.best_loss = val_loss
             self.counter = 0
-        else : 
-            self.counter += 1
+        
+        # if self.best_loss - val_loss > self.min_delta_loss or self.best_accuracy - val_accuracy > self.min_delta_accuracy: 
+        #     self.best_loss = val_loss
+        #     self.counter = 0
+        # else : 
+        #     self.counter += 1
         return self.counter >= self.patience
             
         
@@ -111,14 +119,15 @@ def train_WideResNet(
     device, 
     scheduler, 
     patience, 
-    min_delta
+    min_delta_loss,
+    min_delta_accuracy
     ) : 
     
     training_losses = []
     train_accuracies = []
     val_accuracies = []
     val_losses = []
-    early_stopping = EarlyStopping(patience=patience, min_delta=min_delta)
+    early_stopping = EarlyStopping(patience=patience, min_delta_loss=min_delta_loss, min_delta_accuracy=min_delta_accuracy)
     
     for epoch in range(num_epochs):
         model.train()
@@ -170,7 +179,7 @@ def train_WideResNet(
         print(f"Epoch {epoch+1}: Loss={avg_loss:.4f}, Accuracy={accuracy:.2f}%, Val Loss={val_loss:.4f}, Val Accuracy={val_accuracy:.2f}%")
         scheduler.step()
         
-        if early_stopping(val_loss) :                 
+        if early_stopping(val_loss, val_accuracy) :                 
             print(f"Early stopping triggered at epoch {epoch+1}")
             break
         
@@ -178,14 +187,16 @@ def train_WideResNet(
 
     print("Training complete!")
     fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(10, 5))
-    axes[0].plot(range(num_epochs), torch.tensor(training_losses).cpu(), label="Training loss")
-    axes[0].plot(range(num_epochs), torch.tensor(val_losses).cpu(), label="Validation loss")
+    axes[0].plot(range(epoch+1), torch.tensor(training_losses).cpu(), label="Training loss")
+    axes[0].plot(range(epoch+1), torch.tensor(val_losses).cpu(), label="Validation loss")
     axes[0].title.set_text("Losses")
     axes[0].set_xlabel(xlabel="Epochs")
-    axes[1].plot(range(num_epochs), torch.tensor(train_accuracies).cpu(), label="Training accuracies")
-    axes[1].plot(range(num_epochs), torch.tensor(val_accuracies).cpu(), label="Validation accuracies")
+    axes[0].legend(loc="upper right")
+    axes[1].plot(range(epoch+1), torch.tensor(train_accuracies).cpu(), label="Training accuracies")
+    axes[1].plot(range(epoch+1), torch.tensor(val_accuracies).cpu(), label="Validation accuracies")
     axes[1].title.set_text("Accuracies")
-    axes[0].set_xlabel(xlabel="Epochs")
+    axes[1].set_xlabel(xlabel="Epochs")
+    axes[1].legend(loc="lower right")
     plt.tight_layout()
     plt.show()
     return model
