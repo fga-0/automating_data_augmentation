@@ -1,3 +1,8 @@
+import torch
+import random
+import torchvision.transforms as transforms
+import numpy as np
+
 def uncertainty_based_sampling(
     batch, # B data points (x1,y1), ..., (xB, yB)
     F_transformations, # K transformations F1, ..., FK
@@ -11,7 +16,7 @@ def uncertainty_based_sampling(
     ) : 
 
     model.eval()
-    images, labels = batch
+    images, labels = zip(*batch)
     images, labels = images.to(device), labels.to(device)
     
     selected_samples = []  # Store selected high-uncertainty samples
@@ -26,7 +31,7 @@ def uncertainty_based_sampling(
 
                 # Apply L random transformations
                 transforms_list = random.sample(F_transformations, L)
-                transform_pipeline = transforms.Compose(transforms_list + [G_default_transformations])
+                transform_pipeline = transforms.Compose(transforms_list + G_default_transformations)
                 
                 transformed_img = transform_pipeline(transformed_img)
                 transformed_img = transformed_img.to(device).unsqueeze(0)  # Add batch dim
