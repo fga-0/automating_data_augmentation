@@ -6,8 +6,8 @@ import torch
 from torch.utils.data import DataLoader, Subset, random_split
 
 
-class EarlyStopping() : 
-    def __init(self, patience, min_delta) :
+class EarlyStopping: 
+    def __init__(self, patience, min_delta) :
         self.patience = patience
         self.min_delta = min_delta 
         self.best_loss = float('inf')
