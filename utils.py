@@ -87,6 +87,7 @@ def plot_images(dataset,
         ax[i].imshow(np.transpose(raw_image, (1,2,0)))
         ax[i].axis("off")        
     plt.show()
+    
 
 def plot_one_instance_per_class(dataset) : 
     labels = ["airplane", "automobile", "bird", "cat", "deer", "dog", "frog", "horse", "ship", "truck"]
