@@ -126,6 +126,23 @@ def plot_before_after_augmentation(dataset,
 def display_one_image_per_class() : 
     return
 
+
+def mix_images(image1, image2, alpha):
+    return alpha * image1 + (1 - alpha) * image2
+
+
+def demo_mixup(image1, image2, alpha):
+    fig, ax = plt.subplots(1, 3, figsize=(12, 4))
+    ax[0].imshow(np.transpose(image1, (1, 2, 0)))
+    ax[0].set_title('Image 1')
+    ax[1].imshow(np.transpose(image2, (1, 2, 0)))
+    ax[1].set_title('Image 2')
+    ax[2].imshow(np.transpose(mix_images(image1, image2, alpha), (1, 2, 0)))
+    ax[2].set_title(f'Mixup (alpha={alpha})')
+    plt.show()
+
+# Wide Residual Network
+
 def load_Wide_Residual_Network(device : str, path : str) : 
     wrn = wide_resnet50_2()
     # Freeze all model parameters except for the final layer:
