@@ -4,6 +4,8 @@ import torchvision.transforms as transforms
 from tqdm import tqdm
 import torch
 from torch.utils.data import DataLoader, Subset, random_split
+from torchvision.models import wide_resnet50_2
+import torch.nn as nn
 
 
 class EarlyStopping: 
@@ -122,6 +124,22 @@ def plot_before_after_augmentation(dataset,
     
 def display_one_image_per_class() : 
     return
+
+def load_Wide_Residual_Network(device : str, path : str) : 
+    wrn = wide_resnet50_2()
+    # Freeze all model parameters except for the final layer:
+    for param in wrn.parameters():
+        param.requires_grad = False
+    # Get the number of input features for the original last layer:
+    num_feature = wrn.fc.in_features
+    # Replace the final classification layer to match your dataset:
+    wrn.fc = nn.Linear(num_feature, 10)
+    # View the structure of the new final layer :
+    print(wrn.fc)
+    # Move the model to the GPU for accelerated training:
+    wrn = wrn.to(device)
+    wrn.load_state_dict(torch.load(path, weights_only=False, map_location=torch.device('cpu')))
+    return wrn
 
 def train_WideResNet(
     num_epochs : int, 
