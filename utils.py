@@ -86,6 +86,21 @@ def plot_images(dataset,
         ax[i].axis("off")        
     plt.show()
 
+def plot_one_instance_per_class(dataset) : 
+    labels = ["airplane", "automobile", "bird", "cat", "deer", "dog", "frog", "horse", "ship", "truck"]
+    fig, ax = plt.subplots(nrows=2, ncols=5, figsize=(10, 3))
+    for label in range(10) : 
+        if label<=4 : 
+            row = 0
+        else : 
+            row = 1
+        for i in range(len(dataset)) : 
+            if dataset[i][1] == label : 
+                ax[row][label%5].imshow(np.transpose(dataset[i][0], (1,2,0)))
+                ax[row][label%5].title.set_text(f"{labels[label]}")
+                ax[row][label%5].axis("off")
+                break
+    plt.show()
 def plot_before_after_augmentation(dataset, 
                                    transformation : transforms
                                        ) : 

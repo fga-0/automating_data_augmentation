@@ -23,7 +23,7 @@ class AugmentedDataset(Dataset):
 
         return img, label
 
-def uncertainty_based_sampling(
+def uncertainty_based_sampling_v4(
     batch, # B data points (x1,y1), ..., (xB, yB)
     F_transformations, # K transformations F1, ..., FK
     G_default_transformations, # G default transformations 
