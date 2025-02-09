@@ -4,6 +4,7 @@ import torchvision.transforms as transforms
 import numpy as np
 from torch.utils.data import Dataset
 from PIL import Image
+import matplotlib.pyplot as plt
 
 class AugmentedDataset(Dataset):
     def __init__(self, images, labels, transform=None):
@@ -55,7 +56,9 @@ def uncertainty_based_sampling(
                 transform_pipeline = transforms.Compose(transforms_list)                
                 transformed_img = transform_pipeline(transformed_img)
                 
-                transformed_img = transforms.ToPILImage()(transformed_img) 
+                # transformed_img = transforms.ToPILImage()(transformed_img) 
+                
+                plt.imshow(transformed_img)
                 
                 transformed_img = G_default_transformations(transformed_img)
                 
