@@ -56,7 +56,7 @@ def get_subset(trainset,
                percentage) : 
     # Select only 1% of the dataset
     num_train_samples = int(percentage*len(trainset))
-    num_test_samples = int(percentage*len(testset))    
+    num_test_samples = int(percentage*len(testset)*3)    
 
     # Randomly select indices
     train_indices = np.random.choice(len(trainset), num_train_samples, replace=False)
@@ -256,7 +256,7 @@ def evaluate(model, test_loader, device):
     total = 0
 
     with torch.no_grad():  # Pas de calcul de gradient
-        for images, labels in test_loader:
+        for images, labels in tqdm(test_loader):
             images, labels = images.to(device), labels.to(device)
             outputs = model(images)
             _, predicted = torch.max(outputs, 1)
