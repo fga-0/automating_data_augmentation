@@ -233,9 +233,6 @@ def train_WideResNet(
         if early_stopping(val_loss, val_accuracy) :                 
             print(f"Early stopping triggered at epoch {epoch+1}")
             break
-        
-        print(f"Epoch {epoch+1}: Loss={running_loss/len(trainloader):.4f}, Accuracy={accuracy:.2f}%")
-
     print("Training complete!")
     fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(10, 5))
     axes[0].plot(range(epoch+1), torch.tensor(training_losses).cpu(), label="Training loss")
