@@ -24,12 +24,6 @@ class EarlyStopping:
         else : 
             self.best_loss = val_loss
             self.counter = 0
-        
-        # if self.best_loss - val_loss > self.min_delta_loss or self.best_accuracy - val_accuracy > self.min_delta_accuracy: 
-        #     self.best_loss = val_loss
-        #     self.counter = 0
-        # else : 
-        #     self.counter += 1
         return self.counter >= self.patience
             
         
@@ -104,6 +98,7 @@ def plot_one_instance_per_class(dataset) :
                 ax[row][label%5].axis("off")
                 break
     plt.show()
+
 def plot_before_after_augmentation(dataset, 
                                    transformation : transforms
                                        ) : 
@@ -142,7 +137,6 @@ def demo_mixup(image1, image2, alpha):
     plt.show()
 
 # Wide Residual Network
-
 def load_Wide_Residual_Network(device : str, path : str) : 
     wrn = wide_resnet50_2()
     # Freeze all model parameters except for the final layer:
@@ -251,7 +245,7 @@ def train_WideResNet(
 
 
 def evaluate(model, test_loader, device):
-    model.eval()  # Mode évaluation (désactive dropout, batchnorm)
+    model.eval()
     correct = 0
     total = 0
 

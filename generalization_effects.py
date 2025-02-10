@@ -55,9 +55,7 @@ def uncertainty_based_sampling(
                 transforms_list = random.sample(F_transformations, L)
                 transform_pipeline = transforms.Compose(transforms_list)                
                 transformed_img = transform_pipeline(transformed_img)
-                
-                # transformed_img = transforms.ToPILImage()(transformed_img) 
-                                
+                                                
                 transformed_img = G_default_transformations(transformed_img)
                 
                 transformed_img = transformed_img.to(device) 
